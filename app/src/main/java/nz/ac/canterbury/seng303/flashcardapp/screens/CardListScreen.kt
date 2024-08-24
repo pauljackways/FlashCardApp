@@ -48,10 +48,13 @@ import nz.ac.canterbury.seng303.flashcardapp.models.Card
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.LightText
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultButtonColors
 import nz.ac.canterbury.seng303.flashcardapp.util.convertTimestampToReadableTime
+import nz.ac.canterbury.seng303.flashcardapp.viewmodels.CardViewModel
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 @Composable
-fun CardList(navController: NavController) {
-    val cards = Card.getCards()
+fun CardList(navController: NavController, cardViewModel: CardViewModel) {
+    val cards: List<Card> by cardViewModel.cards.collectAsState(emptyList())
 
     if (cards.isEmpty()) {
         Box(

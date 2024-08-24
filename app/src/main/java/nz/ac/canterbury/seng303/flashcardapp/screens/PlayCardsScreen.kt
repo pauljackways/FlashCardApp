@@ -29,6 +29,8 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -42,6 +44,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
 import nz.ac.canterbury.seng303.flashcardapp.models.Card
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.LightButtonPurple
@@ -49,12 +52,13 @@ import nz.ac.canterbury.seng303.flashcardapp.ui.theme.LightInputGrey
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.LightText
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultButtonColors
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultRadioButtonColors
+import nz.ac.canterbury.seng303.flashcardapp.viewmodels.CardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayCards(navController: NavController) {
-    val cards = Card.getCards()
-    val card = cards.first()
+    val cardViewModel: CardViewModel = viewModel()
+    val cards: List<Card> by cardViewModel.cards.collectAsState(emptyList())
     if (cards.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -68,78 +72,79 @@ fun PlayCards(navController: NavController) {
             )
         }
     } else {
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Text(
-                text = "Play flash cards",
-                color = LightText,
-                fontSize = 34.sp,
-            )
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .weight(1f),
-            ) {
-                Text(
-                    fontSize = 16.sp,
-                    text = card.question,
-                    modifier = Modifier
-                        .background(LightInputGrey)
-                        .fillMaxWidth()
-                        .height(80.dp)
-                        .clip(RoundedCornerShape(8.dp))
-                        .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
-                        .padding(16.dp)
-                )
-                card.options.forEachIndexed { index, rowState ->
-                    var selectedOption by rememberSaveable { mutableStateOf(false) }
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .heightIn(min = 60.dp)
-                    ) {
-                        RadioButton(
-                            selected = selectedOption,
-                            colors = defaultRadioButtonColors(),
-                            onClick = {
-                                selectedOption = !selectedOption
-                            },
-                            modifier = Modifier.padding(end = 8.dp)
-                        )
-
-                        Spacer(modifier = Modifier.width(8.dp))
-
-                        Text(
-                            text = rowState.option,
-                            fontSize = 16.sp,
-                            modifier = Modifier
-                                .weight(1f)
-                                .align(Alignment.CenterVertically)
-                        )
-                    }
-                }
-            }
-            Row(
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                Text(
-                    text = "1/3",
-                    fontSize = 16.sp,
-                    modifier = Modifier
-                )
-                Button(onClick = { },
-                    colors = defaultButtonColors()) {
-                    Text("Submit")
-                }
-            }
-        }
+//        val card = cards.first()
+//        Column(
+//            modifier = Modifier
+//                .fillMaxSize()
+//                .padding(16.dp),
+//            verticalArrangement = Arrangement.spacedBy(16.dp)
+//        ) {
+//            Text(
+//                text = "Play flash cards",
+//                color = LightText,
+//                fontSize = 34.sp,
+//            )
+//            Column(
+//                modifier = Modifier
+//                    .fillMaxSize()
+//                    .verticalScroll(rememberScrollState())
+//                    .weight(1f),
+//            ) {
+//                Text(
+//                    fontSize = 16.sp,
+//                    text = card.question,
+//                    modifier = Modifier
+//                        .background(LightInputGrey)
+//                        .fillMaxWidth()
+//                        .height(80.dp)
+//                        .clip(RoundedCornerShape(8.dp))
+//                        .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
+//                        .padding(16.dp)
+//                )
+//                card.options.forEachIndexed { index, rowState ->
+//                    var selectedOption by rememberSaveable { mutableStateOf(false) }
+//                    Row(
+//                        verticalAlignment = Alignment.CenterVertically,
+//                        modifier = Modifier
+//                            .fillMaxWidth()
+//                            .heightIn(min = 60.dp)
+//                    ) {
+//                        RadioButton(
+//                            selected = selectedOption,
+//                            colors = defaultRadioButtonColors(),
+//                            onClick = {
+//                                selectedOption = !selectedOption
+//                            },
+//                            modifier = Modifier.padding(end = 8.dp)
+//                        )
+//
+//                        Spacer(modifier = Modifier.width(8.dp))
+//
+//                        Text(
+//                            text = rowState.option,
+//                            fontSize = 16.sp,
+//                            modifier = Modifier
+//                                .weight(1f)
+//                                .align(Alignment.CenterVertically)
+//                        )
+//                    }
+//                }
+//            }
+//            Row(
+//                horizontalArrangement = Arrangement.SpaceAround,
+//                verticalAlignment = Alignment.CenterVertically,
+//                modifier = Modifier.fillMaxWidth()
+//            ) {
+//                Text(
+//                    text = "1/3",
+//                    fontSize = 16.sp,
+//                    modifier = Modifier
+//                )
+//                Button(onClick = { },
+//                    colors = defaultButtonColors()) {
+//                    Text("Submit")
+//                }
+//            }
+//        }
     }
 }

@@ -37,16 +37,19 @@ import androidx.compose.ui.res.colorResource
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.FlashCardAppTheme
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.*
 import nz.ac.canterbury.seng303.flashcardapp.screens.*
+import nz.ac.canterbury.seng303.flashcardapp.viewmodels.*
 import org.koin.androidx.viewmodel.ext.android.viewModel as koinViewModel
 
 class MainActivity : ComponentActivity() {
 
-//    private val noteViewModel: NoteViewModel by koinViewModel()
+    private val cardViewModel: CardViewModel by koinViewModel()
+
 
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-//        noteViewModel.loadDefaultNotesIfNoneExist()
+
+        //cardViewModel.loadDefaultCardsIfNoneExist()
 
         setContent {
             FlashCardAppTheme {
@@ -79,16 +82,15 @@ class MainActivity : ComponentActivity() {
                                 color = LightButtonPurple,
                                 shape = RoundedCornerShape(16.dp)
                             )) {
-//                            val createNoteViewModel: CreateNoteViewModel = viewModel()
                             NavHost(navController = navController, startDestination = "Home") {
                                 composable("Home") {
                                     Home(navController = navController)
                                 }
                                 composable("CardList") {
-                                    CardList(navController = navController)
+                                    CardList(navController, cardViewModel)
                                 }
                                 composable("CreateCard") {
-                                    CreateCard(navController = navController)
+                                    CreateCard(navController, cardViewModel)
                                 }
                                 composable("PlayCards") {
                                     PlayCards(navController = navController)

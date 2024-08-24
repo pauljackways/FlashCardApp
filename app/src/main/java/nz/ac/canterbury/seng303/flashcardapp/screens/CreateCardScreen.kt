@@ -26,6 +26,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -38,17 +39,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import nz.ac.canterbury.seng303.flashcardapp.models.Card
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.*
+import nz.ac.canterbury.seng303.flashcardapp.viewmodels.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateCard(navController: NavController) {
+fun CreateCard(navController: NavController, cardViewModel: CardViewModel) {
     val context = LocalContext.current
-    var question by rememberSaveable { mutableStateOf("") }
-    var rows by rememberSaveable { mutableStateOf(
-        List(4) { OptionRowState(false, "") }
-    ) }
+    val createCardViewModel: CreateCardViewModel = viewModel()
+    LaunchedEffect(Unit) {
+        createCardViewModel.initNewCard(4)
+    }
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -67,8 +71,8 @@ fun CreateCard(navController: NavController) {
                 .weight(1f),
         ) {
             TextField(
-                value = question,
-                onValueChange = { question = it },
+                value = createCardViewModel.question,
+                onValueChange = { createCardViewModel.updateQuestion(it) },
                 textStyle = TextStyle(
                     fontSize = 16.sp,
                 ),
@@ -86,7 +90,8 @@ fun CreateCard(navController: NavController) {
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
             )
-            rows.forEachIndexed { index, rowState ->
+            createCardViewModel.options.forEachIndexed { index, rowState ->
+
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     modifier = Modifier
@@ -95,11 +100,9 @@ fun CreateCard(navController: NavController) {
                         .heightIn(min = 60.dp)
                 ) {
                     Checkbox(
-                        checked = rowState.answer,
+                        checked = createCardViewModel.options[index].answer,
                         onCheckedChange = { newValue ->
-                            rows = rows.toMutableList().apply {
-                                this[index] = this[index].copy(answer = newValue)
-                            }
+                            createCardViewModel.updateOption(index, newValue, createCardViewModel.options[index].option)
                         },
                         modifier = Modifier.padding(8.dp)
                     )
@@ -107,11 +110,9 @@ fun CreateCard(navController: NavController) {
                     Spacer(modifier = Modifier.width(8.dp))
 
                     TextField(
-                        value = rowState.option,
+                        value = createCardViewModel.options[index].option,
                         onValueChange = { newValue ->
-                            rows = rows.toMutableList().apply {
-                                this[index] = this[index].copy(option = newValue)
-                            }
+                            createCardViewModel.updateOption(index, createCardViewModel.options[index].answer, newValue)
                         },
                         textStyle = TextStyle(fontSize = 16.sp),
                         modifier = Modifier
@@ -126,7 +127,7 @@ fun CreateCard(navController: NavController) {
             ) {
                 Button(
                     onClick = {
-                        rows = rows + OptionRowState(false, "")
+                        createCardViewModel.addOption()
                     },
                     colors = defaultButtonColors(),
                     modifier = Modifier
@@ -152,26 +153,50 @@ fun CreateCard(navController: NavController) {
             Button(
                 onClick = {
                     val builder = AlertDialog.Builder(context)
-                    if (question.isBlank()) {
+                    if (createCardViewModel.question.isBlank()) {
                         builder.setMessage("A flash card must have a question")
                             .setCancelable(true)
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
-                    } else if (!(rows.any { rowState -> rowState.answer })) {
+                    } else if (!(createCardViewModel.options.any { rowState -> rowState.answer })) {
                         builder.setMessage("A flash card must have at least 1 correct answer")
                             .setCancelable(true)
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
-                    } else if (rows.count { it.option.isNotBlank() } < 2) {
+                    } else if (createCardViewModel.options.count { it.option.isNotBlank() } < 2) {
                         builder.setMessage("A flash card must have at least 2 answer options")
                             .setCancelable(true)
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
+                    } else if (createCardViewModel.options
+                            .filter { it.option.isNotBlank() }
+                            .distinctBy { it.option }
+                            .size < createCardViewModel.options.count { it.option.isNotBlank() }
+                    ) {
+                        builder.setMessage("A flash card must have unique options")
+                            .setCancelable(true)
+                            .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
+                        val alert = builder.create()
+                        alert.show()
+                    } else if (Card.getCards().any {card -> card.question == createCardViewModel.question}) {
+                        builder.setMessage("A flash card with this question already exists")
+                            .setCancelable(true)
+                            .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
+                        val alert = builder.create()
+                        alert.show()
                     } else {
-                        //There should also checks for uniqueness of options and title
+                        val card = Card(
+                            id = (Card.getCards().lastOrNull()?.id ?: 0) + 1,
+                            question = createCardViewModel.question,
+                            options = createCardViewModel.options,
+                            timestamp = System.currentTimeMillis(),
+                            false
+                        )
+                        cardViewModel.createCard(createCardViewModel.question, createCardViewModel.options)
+                        navController.popBackStack()
                     }
                 },
                 colors = defaultButtonColors(),
@@ -181,8 +206,3 @@ fun CreateCard(navController: NavController) {
         }
     }
 }
-
-data class OptionRowState(
-    val answer: Boolean, // Checkbox state
-    val option: String   // TextField content
-)
