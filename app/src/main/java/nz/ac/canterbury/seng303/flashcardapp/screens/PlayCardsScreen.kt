@@ -15,7 +15,9 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Button
@@ -53,7 +55,6 @@ import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultRadioButtonColors
 fun PlayCards(navController: NavController) {
     val cards = Card.getCards()
     val card = cards.first()
-
     if (cards.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -67,7 +68,6 @@ fun PlayCards(navController: NavController) {
             )
         }
     } else {
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -79,55 +79,61 @@ fun PlayCards(navController: NavController) {
                 color = LightText,
                 fontSize = 34.sp,
             )
-            Text(
-                fontSize = 16.sp,
-                text = card.question,
+            Column(
                 modifier = Modifier
-                    .background(LightInputGrey)
-                    .fillMaxWidth()
-                    .height(80.dp)
-                    .clip(RoundedCornerShape(8.dp))
-                    .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
-                    .padding(16.dp)
-            )
-            card.options.forEachIndexed { index, rowState ->
-                var selectedOption by rememberSaveable { mutableStateOf(false) }
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                    .fillMaxSize()
+                    .verticalScroll(rememberScrollState())
+                    .weight(1f),
+            ) {
+                Text(
+                    fontSize = 16.sp,
+                    text = card.question,
                     modifier = Modifier
+                        .background(LightInputGrey)
                         .fillMaxWidth()
-                        .heightIn(min = 60.dp)
-                ) {
-                    RadioButton(
-                        selected = selectedOption,
-                        colors = defaultRadioButtonColors(),
-                        onClick = {
-                            selectedOption = !selectedOption
-                        },
-                        modifier = Modifier.padding(end = 8.dp)
-                    )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = rowState.option,
-                        fontSize = 16.sp,
+                        .height(80.dp)
+                        .clip(RoundedCornerShape(8.dp))
+                        .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
+                        .padding(16.dp)
+                )
+                card.options.forEachIndexed { index, rowState ->
+                    var selectedOption by rememberSaveable { mutableStateOf(false) }
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
                         modifier = Modifier
-                            .weight(1f)
-                            .align(Alignment.CenterVertically)
-                    )
+                            .fillMaxWidth()
+                            .heightIn(min = 60.dp)
+                    ) {
+                        RadioButton(
+                            selected = selectedOption,
+                            colors = defaultRadioButtonColors(),
+                            onClick = {
+                                selectedOption = !selectedOption
+                            },
+                            modifier = Modifier.padding(end = 8.dp)
+                        )
+
+                        Spacer(modifier = Modifier.width(8.dp))
+
+                        Text(
+                            text = rowState.option,
+                            fontSize = 16.sp,
+                            modifier = Modifier
+                                .weight(1f)
+                                .align(Alignment.CenterVertically)
+                        )
+                    }
                 }
             }
             Row(
-                horizontalArrangement = Arrangement.SpaceBetween,
+                horizontalArrangement = Arrangement.SpaceAround,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Text(
                     text = "1/3",
                     fontSize = 16.sp,
                     modifier = Modifier
-                        .weight(1f)
-                        .height(60.dp)
                 )
                 Button(onClick = { },
                     colors = defaultButtonColors()) {

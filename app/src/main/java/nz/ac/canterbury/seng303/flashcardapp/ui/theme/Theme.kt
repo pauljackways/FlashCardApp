@@ -69,7 +69,7 @@ fun defaultButtonColors() = ButtonDefaults.buttonColors(
 
 @Composable
 fun defaultRadioButtonColors() = RadioButtonDefaults.colors(
-    selectedColor = LightColorScheme.secondary, // Color when selected
+    selectedColor = LightColorScheme.secondary,
 )
 
 

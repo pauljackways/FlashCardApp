@@ -1,6 +1,8 @@
 package nz.ac.canterbury.seng303.flashcardapp.screens
 
 import android.app.AlertDialog
+import android.app.SearchManager
+import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -88,6 +90,7 @@ fun CardList(navController: NavController) {
 
 @Composable
 fun CardItem(navController: NavController, card: Card) {
+    val context = LocalContext.current
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -109,6 +112,10 @@ fun CardItem(navController: NavController, card: Card) {
             ) {
                 Button(
                     onClick = {
+                        val intent = Intent(Intent.ACTION_WEB_SEARCH).apply {
+                            putExtra(SearchManager.QUERY, card.question) // Pass the query string
+                        }
+                        context.startActivity(intent)
                     },
                     colors = defaultButtonColors(),
                     modifier = Modifier
@@ -138,6 +145,13 @@ fun CardItem(navController: NavController, card: Card) {
 
                 Button(
                     onClick = {
+                        val builder = AlertDialog.Builder(context)
+                        builder.setMessage("Delete flash card: \"" + card.question + "\"?")
+                            .setCancelable(true)
+                            .setNegativeButton("Cancel") { dialog, id -> dialog.dismiss() }
+                            .setPositiveButton("DELETE") { dialog, id -> dialog.dismiss() }
+                        val alert = builder.create()
+                        alert.show()
                     },
                     colors = defaultButtonColors(),
                     modifier = Modifier
