@@ -4,6 +4,8 @@ import android.app.Activity
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CheckboxColors
+import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.darkColorScheme
@@ -65,6 +67,11 @@ fun FlashCardAppTheme(
 @Composable
 fun defaultButtonColors() = ButtonDefaults.buttonColors(
     containerColor = LightColorScheme.secondary
+)
+
+@Composable
+fun defaultCheckboxColors(): CheckboxColors = CheckboxDefaults.colors(
+    checkedColor = LightColorScheme.secondary,
 )
 
 @Composable

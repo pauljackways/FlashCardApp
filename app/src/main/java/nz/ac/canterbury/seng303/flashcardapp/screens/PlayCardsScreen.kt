@@ -1,5 +1,6 @@
 package nz.ac.canterbury.seng303.flashcardapp.screens
 
+import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -49,11 +50,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavController
+import androidx.room.util.copy
 import nz.ac.canterbury.seng303.flashcardapp.models.Card
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.LightButtonPurple
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.LightInputGrey
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.LightText
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultButtonColors
+import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultCheckboxColors
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultRadioButtonColors
 import nz.ac.canterbury.seng303.flashcardapp.viewmodels.CardViewModel
 
@@ -61,8 +64,9 @@ import nz.ac.canterbury.seng303.flashcardapp.viewmodels.CardViewModel
 @Composable
 fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
     cardViewModel.getCards()
+    val context = LocalContext.current
     val cards: List<Card> by cardViewModel.cards.collectAsState(emptyList())
-    val gameList = remember { mutableStateListOf<Pair<Boolean?, Card>>() }
+    var gameList = remember { mutableStateListOf<Pair<Card, Card>>() }
     LaunchedEffect(Unit) {
         if (gameList.isEmpty()) {
             val shuffledCards = cards.shuffled()
@@ -71,13 +75,25 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                     card.id,
                     card.question,
                     card.options.shuffled(),
-                    System.currentTimeMillis(), //Allows for future implementations of progress tracking at the individual card level
+                    System.currentTimeMillis(),
                     false
                 )
-                gameList += Pair(null, shuffledCard)
+
+                // Create a memory-separate copy of the shuffled card for answerCard
+                val answerCard = Card(
+                    card.id,
+                    card.question,
+                    shuffledCard.options.map { option ->
+                        Card.Option(false, option.option)
+                    },
+                    System.currentTimeMillis(),
+                    false
+                )
+                gameList += Pair(answerCard, shuffledCard)
             }
         }
     }
+
 
     if (cards.isEmpty()) {
         Box(
@@ -130,11 +146,11 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                                 .fillMaxWidth()
                                 .heightIn(min = 60.dp)
                         ) {
-                            RadioButton(
-                                selected = selectedOption,
-                                colors = defaultRadioButtonColors(),
-                                onClick = {
-                                    selectedOption = !selectedOption
+                            Checkbox(
+                                checked = gameList[cardIndex].first.options[index].answer,
+                                colors = defaultCheckboxColors(),
+                                onCheckedChange = {
+                                    gameList[cardIndex].first.options[index].answer = !gameList[cardIndex].first.options[index].answer
                                 },
                                 modifier = Modifier.padding(end = 8.dp)
                             )
@@ -162,7 +178,33 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                         modifier = Modifier
                     )
                     Button(
-                        onClick = { cardIndex++ },
+                        onClick = {
+                            var correctCount = 0
+                            var incorrectCount = 0
+                            var totalCount = 0
+                            gameList[cardIndex].second.options.forEachIndexed { index, rowState ->
+                                if (rowState.answer) {
+                                    totalCount++
+                                }
+                                if (rowState.answer == gameList[cardIndex].first.options[index].answer && rowState.answer) {
+                                    correctCount++
+                                }
+                                if (rowState.answer != gameList[cardIndex].first.options[index].answer && !rowState.answer) {
+                                    incorrectCount++
+                                }
+                            }
+                            if (correctCount == totalCount && incorrectCount == 0) {
+                                Toast.makeText(context, "Correct Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
+                            } else {
+                                if (correctCount == totalCount) {
+                                    Toast.makeText(context, "Wrong Answer, too many answers selected", Toast.LENGTH_SHORT).show()
+                                } else {
+                                    Toast.makeText(context, "Wrong Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
+                                }
+                            }
+                            cardIndex++
+
+                                  },
                         colors = defaultButtonColors()
                     ) {
                         Text("Submit")

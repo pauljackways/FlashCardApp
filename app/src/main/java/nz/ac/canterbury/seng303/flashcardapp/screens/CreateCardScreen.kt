@@ -55,11 +55,12 @@ fun CreateCard(navController: NavController, cardViewModel: CardViewModel, id: S
         cardViewModel.getCardById(cardId)
     }
     val card by cardViewModel.selectedCard.collectAsState()
+    val cards: List<Card> by cardViewModel.cards.collectAsState(emptyList())
     val context = LocalContext.current
     LaunchedEffect(card) {
         if (card != null) {
             createCardViewModel.initWithCard(card!!)
-        } else {
+        } else if (createCardViewModel.options.isEmpty()) {
             createCardViewModel.initNewCard(4)
         }
     }
@@ -172,35 +173,36 @@ fun CreateCard(navController: NavController, cardViewModel: CardViewModel, id: S
             Button(
                 onClick = {
                     val builder = AlertDialog.Builder(context)
+                    val filteredOptions = createCardViewModel.options.filter { option -> option.option.isNotBlank() }
                     if (createCardViewModel.question.isBlank()) {
                         builder.setMessage("A flash card must have a question")
                             .setCancelable(true)
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
-                    } else if (!(createCardViewModel.options.any { rowState -> rowState.answer })) {
+                    } else if (!(filteredOptions.any { rowState -> rowState.answer })) {
                         builder.setMessage("A flash card must have at least 1 correct answer")
                             .setCancelable(true)
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
-                    } else if (createCardViewModel.options.count { it.option.isNotBlank() } < 2) {
+                    } else if (filteredOptions.count { it.option.isNotBlank() } < 2) {
                         builder.setMessage("A flash card must have at least 2 answer options")
                             .setCancelable(true)
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
-                    } else if (createCardViewModel.options
+                    } else if (filteredOptions
                             .filter { it.option.isNotBlank() }
                             .distinctBy { it.option }
-                            .size < createCardViewModel.options.count { it.option.isNotBlank() }
+                            .size < filteredOptions.count { it.option.isNotBlank() }
                     ) {
                         builder.setMessage("A flash card must have unique options")
                             .setCancelable(true)
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
-                    } else if (Card.getCards().any { card ->
+                    } else if (cards.any { card ->
                             card.question == createCardViewModel.question && (cardId == null || card.id != cardId)
                         }) {
                         builder.setMessage("A flash card with this question already exists")
@@ -210,17 +212,17 @@ fun CreateCard(navController: NavController, cardViewModel: CardViewModel, id: S
                         alert.show()
                     } else {
                         if (card != null) {
-                            var newCard = Card(
+                            val newCard = Card(
                                 id = card!!.id,
                                 question = createCardViewModel.question,
-                                options = createCardViewModel.options,
+                                options = filteredOptions,
                                 timestamp = card!!.timestamp,
                                 false
                             )
                             cardViewModel.editCardById(cardId, newCard)
                             navController.popBackStack()
                         } else {
-                            cardViewModel.createCard(createCardViewModel.question, createCardViewModel.options)
+                            cardViewModel.createCard(createCardViewModel.question, filteredOptions)
                             navController.popBackStack()
                         }
 

@@ -3,14 +3,14 @@ package nz.ac.canterbury.seng303.flashcardapp.models
 class Card(
     val id: Int,
     val question: String,
-    val options: List<Option>,
+    var options: List<Option>,
     val timestamp: Long,
     val isArchived: Boolean
 ) : Identifiable {
 
     // Custom data class to hold each option
     data class Option(
-        val answer: Boolean,
+        var answer: Boolean,
         val option: String
     )
 
