@@ -21,6 +21,8 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Divider
@@ -59,14 +61,17 @@ import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultButtonColors
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultCheckboxColors
 import nz.ac.canterbury.seng303.flashcardapp.ui.theme.defaultRadioButtonColors
 import nz.ac.canterbury.seng303.flashcardapp.viewmodels.CardViewModel
+import org.intellij.lang.annotations.JdkConstants.HorizontalAlignment
+import androidx.compose.foundation.layout.size
 
+data class Game(val answerCard: Card, val questionCard: Card, var result: Boolean)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
     cardViewModel.getCards()
     val context = LocalContext.current
     val cards: List<Card> by cardViewModel.cards.collectAsState(emptyList())
-    var gameList = remember { mutableStateListOf<Pair<Card, Card>>() }
+    var gameList = remember { mutableStateListOf<Game>() }
     LaunchedEffect(Unit) {
         if (gameList.isEmpty()) {
             val shuffledCards = cards.shuffled()
@@ -89,7 +94,7 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                     System.currentTimeMillis(),
                     false
                 )
-                gameList += Pair(answerCard, shuffledCard)
+                gameList += Game(answerCard, shuffledCard, false)
             }
         }
     }
@@ -109,6 +114,7 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
         }
     } else {
         var cardIndex by rememberSaveable { mutableIntStateOf(0) }
+        var finalCorrectCount by rememberSaveable { mutableIntStateOf(0) }
         if (cardIndex < gameList.size) {
             Column(
                 modifier = Modifier
@@ -129,7 +135,7 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                 ) {
                     Text(
                         fontSize = 16.sp,
-                        text = gameList[cardIndex].second.question,
+                        text = gameList[cardIndex].questionCard.question,
                         modifier = Modifier
                             .background(LightInputGrey)
                             .fillMaxWidth()
@@ -138,8 +144,7 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                             .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
                             .padding(16.dp)
                     )
-                    gameList[cardIndex].second.options.forEachIndexed { index, rowState ->
-                        var selectedOption by rememberSaveable { mutableStateOf(false) }
+                    gameList[cardIndex].questionCard.options.forEachIndexed { index, rowState ->
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             modifier = Modifier
@@ -147,10 +152,10 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                                 .heightIn(min = 60.dp)
                         ) {
                             Checkbox(
-                                checked = gameList[cardIndex].first.options[index].answer,
+                                checked = gameList[cardIndex].answerCard.options[index].answer,
                                 colors = defaultCheckboxColors(),
                                 onCheckedChange = {
-                                    gameList[cardIndex].first.options[index].answer = !gameList[cardIndex].first.options[index].answer
+                                    gameList[cardIndex].answerCard.options[index].answer = !gameList[cardIndex].answerCard.options[index].answer
                                 },
                                 modifier = Modifier.padding(end = 8.dp)
                             )
@@ -179,22 +184,24 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                     )
                     Button(
                         onClick = {
+                            var totalCount = 0
                             var correctCount = 0
                             var incorrectCount = 0
-                            var totalCount = 0
-                            gameList[cardIndex].second.options.forEachIndexed { index, rowState ->
+                            gameList[cardIndex].questionCard.options.forEachIndexed { index, rowState ->
                                 if (rowState.answer) {
                                     totalCount++
                                 }
-                                if (rowState.answer == gameList[cardIndex].first.options[index].answer && rowState.answer) {
+                                if (rowState.answer == gameList[cardIndex].answerCard.options[index].answer && rowState.answer) {
                                     correctCount++
                                 }
-                                if (rowState.answer != gameList[cardIndex].first.options[index].answer && !rowState.answer) {
+                                if (rowState.answer != gameList[cardIndex].answerCard.options[index].answer && !rowState.answer) {
                                     incorrectCount++
                                 }
                             }
                             if (correctCount == totalCount && incorrectCount == 0) {
                                 Toast.makeText(context, "Correct Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
+                                finalCorrectCount++
+                                gameList[cardIndex].result = true
                             } else {
                                 if (correctCount == totalCount) {
                                     Toast.makeText(context, "Wrong Answer, too many answers selected", Toast.LENGTH_SHORT).show()
@@ -212,7 +219,68 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                 }
             }
         } else {
+            LazyColumn (
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                item {
+                    Text(
+                        text = "Summary",
+                        color = LightText,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 40.sp,
+                    )
+                    Text(
+                        text = "Score : ${finalCorrectCount}/${gameList.size}",
+                        color = LightText,
+                        fontSize = 40.sp,
+                    )
+                }
+                items(gameList) { game ->
+                    SummaryItem(navController = navController, game, cardViewModel)
+                }
+            }
+        }
+    }
+}
 
+@Composable
+fun SummaryItem(navController: NavController, game: Game, cardViewModel: CardViewModel) {
+    val context = LocalContext.current
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White)
+            .padding(16.dp)
+    ) {
+
+        Row (
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = game.questionCard.question,
+                modifier = Modifier.weight(1f),
+                fontSize = 16.sp,
+            )
+            if (game.result) {
+                Icon(
+                    imageVector = Icons.Default.Check,
+                    modifier = Modifier.size(24.dp),
+                    contentDescription = "Tick Icon"
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    modifier = Modifier.size(24.dp),
+                    contentDescription = "Cross Icon"
+                )
+            }
         }
     }
 }
