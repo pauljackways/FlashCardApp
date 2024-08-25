@@ -1,5 +1,6 @@
 package nz.ac.canterbury.seng303.flashcardapp.screens
 
+import android.app.AlertDialog
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -187,29 +188,43 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                             var totalCount = 0
                             var correctCount = 0
                             var incorrectCount = 0
-                            gameList[cardIndex].questionCard.options.forEachIndexed { index, rowState ->
-                                if (rowState.answer) {
+                            var uncheckedCount = 0
+                            gameList[cardIndex].answerCard.options.forEachIndexed { index, rowState ->
+                                if (gameList[cardIndex].questionCard.options[index].answer) {
                                     totalCount++
                                 }
-                                if (rowState.answer == gameList[cardIndex].answerCard.options[index].answer && rowState.answer) {
+                                if (rowState.answer == gameList[cardIndex].questionCard.options[index].answer && gameList[cardIndex].questionCard.options[index].answer) {
                                     correctCount++
                                 }
-                                if (rowState.answer != gameList[cardIndex].answerCard.options[index].answer && !rowState.answer) {
+                                if (rowState.answer != gameList[cardIndex].questionCard.options[index].answer && !gameList[cardIndex].questionCard.options[index].answer) {
                                     incorrectCount++
                                 }
-                            }
-                            if (correctCount == totalCount && incorrectCount == 0) {
-                                Toast.makeText(context, "Correct Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
-                                finalCorrectCount++
-                                gameList[cardIndex].result = true
-                            } else {
-                                if (correctCount == totalCount) {
-                                    Toast.makeText(context, "Wrong Answer, too many answers selected", Toast.LENGTH_SHORT).show()
-                                } else {
-                                    Toast.makeText(context, "Wrong Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
+                                if (!rowState.answer) {
+                                    uncheckedCount++
                                 }
                             }
-                            cardIndex++
+                            if (uncheckedCount < gameList[cardIndex].questionCard.options.size) {
+                                if (correctCount == totalCount && incorrectCount == 0) {
+                                    Toast.makeText(context, "Correct Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
+                                    finalCorrectCount++
+                                    gameList[cardIndex].result = true
+                                } else {
+                                    if (correctCount == totalCount) {
+                                        Toast.makeText(context, "Wrong Answer, too many answers selected", Toast.LENGTH_SHORT).show()
+                                    } else {
+                                        Toast.makeText(context, "Wrong Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
+                                    }
+                                }
+                                cardIndex++
+                            } else {
+                                val builder = AlertDialog.Builder(context)
+                                builder.setMessage("Please select at least one option")
+                                    .setCancelable(true)
+                                    .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
+                                val alert = builder.create()
+                                alert.show()
+                            }
+
 
                                   },
                         colors = defaultButtonColors()
