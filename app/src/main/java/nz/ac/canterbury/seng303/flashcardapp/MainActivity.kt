@@ -60,14 +60,14 @@ class MainActivity : ComponentActivity() {
                             title = { Text("Flash Cards App") },
                             navigationIcon = {
                                 if (navController.equals("Home")) {
-                                    IconButton(onClick = { navController.popBackStack() }) {
+                                    IconButton(onClick = { finish()  }) {
                                         Icon(
                                             imageVector = Icons.Default.ArrowBack,
                                             contentDescription = "Back"
                                         )
                                     }
                                 } else {
-                                    IconButton(onClick = { finish() }) {
+                                    IconButton(onClick = { navController.popBackStack()}) {
                                         Icon(
                                             imageVector = Icons.Default.ArrowBack,
                                             contentDescription = "Back"

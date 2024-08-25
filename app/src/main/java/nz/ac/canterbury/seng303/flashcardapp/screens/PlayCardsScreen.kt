@@ -72,7 +72,7 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
     cardViewModel.getCards()
     val context = LocalContext.current
     val cards: List<Card> by cardViewModel.cards.collectAsState(emptyList())
-    var gameList = remember { mutableStateListOf<Game>() }
+    var gameList by rememberSaveable { mutableStateOf(mutableListOf<Game>()) }
     LaunchedEffect(Unit) {
         if (gameList.isEmpty()) {
             val shuffledCards = cards.shuffled()
@@ -152,11 +152,16 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                                 .fillMaxWidth()
                                 .heightIn(min = 60.dp)
                         ) {
+                            var checkedState by rememberSaveable { mutableStateOf(Pair(cardIndex, false))}
+                            if (cardIndex != checkedState.first) {
+                                checkedState = Pair(cardIndex, false)
+                            }
                             Checkbox(
-                                checked = gameList[cardIndex].answerCard.options[index].answer,
+                                checked = checkedState.second,
                                 colors = defaultCheckboxColors(),
-                                onCheckedChange = {
-                                    gameList[cardIndex].answerCard.options[index].answer = !gameList[cardIndex].answerCard.options[index].answer
+                                onCheckedChange = { isChecked ->
+                                    checkedState = Pair(cardIndex, isChecked)
+                                    gameList[cardIndex].answerCard.options[index].answer = isChecked
                                 },
                                 modifier = Modifier.padding(end = 8.dp)
                             )
@@ -205,14 +210,14 @@ fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
                             }
                             if (uncheckedCount < gameList[cardIndex].questionCard.options.size) {
                                 if (correctCount == totalCount && incorrectCount == 0) {
-                                    Toast.makeText(context, "Correct Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
+                                    Toast.makeText(context, "Correct Answer, ${correctCount}/${totalCount} correct answers selected", Toast.LENGTH_SHORT).show()
                                     finalCorrectCount++
                                     gameList[cardIndex].result = true
                                 } else {
                                     if (correctCount == totalCount) {
                                         Toast.makeText(context, "Wrong Answer, too many answers selected", Toast.LENGTH_SHORT).show()
                                     } else {
-                                        Toast.makeText(context, "Wrong Answer, ${correctCount}/${totalCount} Correct Answers Selected", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(context, "Incomplete Answer, ${correctCount}/${totalCount} correct answers selected", Toast.LENGTH_SHORT).show()
                                     }
                                 }
                                 cardIndex++
