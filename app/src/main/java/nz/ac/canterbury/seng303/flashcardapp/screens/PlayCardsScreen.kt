@@ -32,7 +32,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -56,9 +59,26 @@ import nz.ac.canterbury.seng303.flashcardapp.viewmodels.CardViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun PlayCards(navController: NavController) {
-    val cardViewModel: CardViewModel = viewModel()
+fun PlayCards(navController: NavController, cardViewModel: CardViewModel) {
+    cardViewModel.getCards()
     val cards: List<Card> by cardViewModel.cards.collectAsState(emptyList())
+    val gameList = remember { mutableStateListOf<Pair<Boolean?, Card>>() }
+    LaunchedEffect(Unit) {
+        if (gameList.isEmpty()) {
+            val shuffledCards = cards.shuffled()
+            for (card in shuffledCards) {
+                val shuffledCard = Card(
+                    card.id,
+                    card.question,
+                    card.options.shuffled(),
+                    System.currentTimeMillis(), //Allows for future implementations of progress tracking at the individual card level
+                    false
+                )
+                gameList += Pair(null, shuffledCard)
+            }
+        }
+    }
+
     if (cards.isEmpty()) {
         Box(
             modifier = Modifier.fillMaxSize(),
@@ -72,79 +92,85 @@ fun PlayCards(navController: NavController) {
             )
         }
     } else {
-//        val card = cards.first()
-//        Column(
-//            modifier = Modifier
-//                .fillMaxSize()
-//                .padding(16.dp),
-//            verticalArrangement = Arrangement.spacedBy(16.dp)
-//        ) {
-//            Text(
-//                text = "Play flash cards",
-//                color = LightText,
-//                fontSize = 34.sp,
-//            )
-//            Column(
-//                modifier = Modifier
-//                    .fillMaxSize()
-//                    .verticalScroll(rememberScrollState())
-//                    .weight(1f),
-//            ) {
-//                Text(
-//                    fontSize = 16.sp,
-//                    text = card.question,
-//                    modifier = Modifier
-//                        .background(LightInputGrey)
-//                        .fillMaxWidth()
-//                        .height(80.dp)
-//                        .clip(RoundedCornerShape(8.dp))
-//                        .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
-//                        .padding(16.dp)
-//                )
-//                card.options.forEachIndexed { index, rowState ->
-//                    var selectedOption by rememberSaveable { mutableStateOf(false) }
-//                    Row(
-//                        verticalAlignment = Alignment.CenterVertically,
-//                        modifier = Modifier
-//                            .fillMaxWidth()
-//                            .heightIn(min = 60.dp)
-//                    ) {
-//                        RadioButton(
-//                            selected = selectedOption,
-//                            colors = defaultRadioButtonColors(),
-//                            onClick = {
-//                                selectedOption = !selectedOption
-//                            },
-//                            modifier = Modifier.padding(end = 8.dp)
-//                        )
-//
-//                        Spacer(modifier = Modifier.width(8.dp))
-//
-//                        Text(
-//                            text = rowState.option,
-//                            fontSize = 16.sp,
-//                            modifier = Modifier
-//                                .weight(1f)
-//                                .align(Alignment.CenterVertically)
-//                        )
-//                    }
-//                }
-//            }
-//            Row(
-//                horizontalArrangement = Arrangement.SpaceAround,
-//                verticalAlignment = Alignment.CenterVertically,
-//                modifier = Modifier.fillMaxWidth()
-//            ) {
-//                Text(
-//                    text = "1/3",
-//                    fontSize = 16.sp,
-//                    modifier = Modifier
-//                )
-//                Button(onClick = { },
-//                    colors = defaultButtonColors()) {
-//                    Text("Submit")
-//                }
-//            }
-//        }
+        var cardIndex by rememberSaveable { mutableIntStateOf(0) }
+        if (cardIndex < gameList.size) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Play flash cards",
+                    color = LightText,
+                    fontSize = 34.sp,
+                )
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .weight(1f),
+                ) {
+                    Text(
+                        fontSize = 16.sp,
+                        text = gameList[cardIndex].second.question,
+                        modifier = Modifier
+                            .background(LightInputGrey)
+                            .fillMaxWidth()
+                            .height(80.dp)
+                            .clip(RoundedCornerShape(8.dp))
+                            .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
+                            .padding(16.dp)
+                    )
+                    gameList[cardIndex].second.options.forEachIndexed { index, rowState ->
+                        var selectedOption by rememberSaveable { mutableStateOf(false) }
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .heightIn(min = 60.dp)
+                        ) {
+                            RadioButton(
+                                selected = selectedOption,
+                                colors = defaultRadioButtonColors(),
+                                onClick = {
+                                    selectedOption = !selectedOption
+                                },
+                                modifier = Modifier.padding(end = 8.dp)
+                            )
+
+                            Spacer(modifier = Modifier.width(8.dp))
+
+                            Text(
+                                text = rowState.option,
+                                fontSize = 16.sp,
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .align(Alignment.CenterVertically)
+                            )
+                        }
+                    }
+                }
+                Row(
+                    horizontalArrangement = Arrangement.SpaceAround,
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text(
+                        text = "${cardIndex+1}/${gameList.size}",
+                        fontSize = 16.sp,
+                        modifier = Modifier
+                    )
+                    Button(
+                        onClick = { cardIndex++ },
+                        colors = defaultButtonColors()
+                    ) {
+                        Text("Submit")
+                    }
+                }
+            }
+        } else {
+
+        }
     }
 }

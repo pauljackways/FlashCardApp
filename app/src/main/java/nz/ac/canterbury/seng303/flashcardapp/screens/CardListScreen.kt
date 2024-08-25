@@ -54,6 +54,7 @@ import androidx.compose.runtime.getValue
 
 @Composable
 fun CardList(navController: NavController, cardViewModel: CardViewModel) {
+    cardViewModel.getCards()
     val cards: List<Card> by cardViewModel.cards.collectAsState(emptyList())
 
     if (cards.isEmpty()) {
@@ -84,7 +85,7 @@ fun CardList(navController: NavController, cardViewModel: CardViewModel) {
                 )
             }
             items(cards) { card ->
-                CardItem(navController = navController, card = card)
+                CardItem(navController = navController, card = card, cardViewModel)
             }
         }
     }
@@ -92,7 +93,7 @@ fun CardList(navController: NavController, cardViewModel: CardViewModel) {
 
 
 @Composable
-fun CardItem(navController: NavController, card: Card) {
+fun CardItem(navController: NavController, card: Card, cardViewModel: CardViewModel) {
     val context = LocalContext.current
     Box(
         modifier = Modifier
@@ -133,6 +134,7 @@ fun CardItem(navController: NavController, card: Card) {
                 }
                 Button(
                     onClick = {
+                        navController.navigate("createCard/${card.id}")
                     },
                     colors = defaultButtonColors(),
                     modifier = Modifier
@@ -152,8 +154,11 @@ fun CardItem(navController: NavController, card: Card) {
                         builder.setMessage("Delete flash card: \"" + card.question + "\"?")
                             .setCancelable(true)
                             .setNegativeButton("Cancel") { dialog, id -> dialog.dismiss() }
-                            .setPositiveButton("DELETE") { dialog, id -> dialog.dismiss() }
-                        val alert = builder.create()
+                            .setPositiveButton("DELETE") { dialog, id ->
+                                cardViewModel.deleteCardById(card.id)
+                                dialog.dismiss()
+                            }
+                                val alert = builder.create()
                         alert.show()
                     },
                     colors = defaultButtonColors(),

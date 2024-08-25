@@ -27,6 +27,7 @@ import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -47,11 +48,20 @@ import nz.ac.canterbury.seng303.flashcardapp.viewmodels.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CreateCard(navController: NavController, cardViewModel: CardViewModel) {
-    val context = LocalContext.current
+fun CreateCard(navController: NavController, cardViewModel: CardViewModel, id: String?) {
+    val cardId: Int? = id?.toIntOrNull()
     val createCardViewModel: CreateCardViewModel = viewModel()
-    LaunchedEffect(Unit) {
-        createCardViewModel.initNewCard(4)
+    LaunchedEffect(cardId) {
+        cardViewModel.getCardById(cardId)
+    }
+    val card by cardViewModel.selectedCard.collectAsState()
+    val context = LocalContext.current
+    LaunchedEffect(card) {
+        if (card != null) {
+            createCardViewModel.initWithCard(card!!)
+        } else {
+            createCardViewModel.initNewCard(4)
+        }
     }
     Column(
         modifier = Modifier
@@ -59,11 +69,20 @@ fun CreateCard(navController: NavController, cardViewModel: CardViewModel) {
             .padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
-        Text(
-            text = "Add a new flash card",
-            color = LightText,
-            fontSize = 34.sp,
-        )
+        if (card == null) {
+            Text(
+                text = "Add a new flash card",
+                color = LightText,
+                fontSize = 34.sp,
+            )
+        } else {
+            Text(
+                text = "Edit flash card",
+                color = LightText,
+                fontSize = 34.sp,
+            )
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -181,22 +200,30 @@ fun CreateCard(navController: NavController, cardViewModel: CardViewModel) {
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
-                    } else if (Card.getCards().any {card -> card.question == createCardViewModel.question}) {
+                    } else if (Card.getCards().any { card ->
+                            card.question == createCardViewModel.question && (cardId == null || card.id != cardId)
+                        }) {
                         builder.setMessage("A flash card with this question already exists")
                             .setCancelable(true)
                             .setNegativeButton("Close") { dialog, id -> dialog.dismiss() }
                         val alert = builder.create()
                         alert.show()
                     } else {
-                        val card = Card(
-                            id = (Card.getCards().lastOrNull()?.id ?: 0) + 1,
-                            question = createCardViewModel.question,
-                            options = createCardViewModel.options,
-                            timestamp = System.currentTimeMillis(),
-                            false
-                        )
-                        cardViewModel.createCard(createCardViewModel.question, createCardViewModel.options)
-                        navController.popBackStack()
+                        if (card != null) {
+                            var newCard = Card(
+                                id = card!!.id,
+                                question = createCardViewModel.question,
+                                options = createCardViewModel.options,
+                                timestamp = card!!.timestamp,
+                                false
+                            )
+                            cardViewModel.editCardById(cardId, newCard)
+                            navController.popBackStack()
+                        } else {
+                            cardViewModel.createCard(createCardViewModel.question, createCardViewModel.options)
+                            navController.popBackStack()
+                        }
+
                     }
                 },
                 colors = defaultButtonColors(),

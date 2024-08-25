@@ -48,8 +48,7 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        //cardViewModel.loadDefaultCardsIfNoneExist()
+        cardViewModel.loadDefaultCardsIfNoneExist()
 
         setContent {
             FlashCardAppTheme {
@@ -90,10 +89,14 @@ class MainActivity : ComponentActivity() {
                                     CardList(navController, cardViewModel)
                                 }
                                 composable("CreateCard") {
-                                    CreateCard(navController, cardViewModel)
+                                    CreateCard(navController, cardViewModel, null)
                                 }
                                 composable("PlayCards") {
-                                    PlayCards(navController = navController)
+                                    PlayCards(navController, cardViewModel)
+                                }
+                                composable("createCard/{cardId}") { backStackEntry ->
+                                    val cardId = backStackEntry.arguments?.getString("cardId")
+                                    CreateCard(navController, cardViewModel, cardId)
                                 }
                             }
                         }

@@ -23,6 +23,10 @@ class CreateCardViewModel: ViewModel() {
             addOption()
         }
     }
+    fun initWithCard(card: Card) {
+        question = card.question
+        options = card.options
+    }
 
     fun updateOption(index: Int, answer: Boolean, newOption: String) {
         options = options.toMutableList().apply {
