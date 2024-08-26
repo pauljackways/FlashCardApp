@@ -3,6 +3,7 @@ package nz.ac.canterbury.seng303.flashcardapp.screens
 import android.app.AlertDialog
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -12,12 +13,15 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -106,14 +110,17 @@ fun CreateCard(navController: NavController, cardViewModel: CardViewModel, id: S
                 },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(80.dp)
                     .clip(RoundedCornerShape(8.dp))
                     .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp))
+                    .wrapContentHeight()
+                    .heightIn(min = 80.dp)
+                    .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp)),
+                maxLines = Int.MAX_VALUE
             )
             createCardViewModel.options.forEachIndexed { index, rowState ->
-
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(8.dp)
@@ -126,9 +133,6 @@ fun CreateCard(navController: NavController, cardViewModel: CardViewModel, id: S
                         },
                         modifier = Modifier.padding(8.dp)
                     )
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
                     TextField(
                         value = createCardViewModel.options[index].option,
                         onValueChange = { newValue ->
@@ -136,8 +140,23 @@ fun CreateCard(navController: NavController, cardViewModel: CardViewModel, id: S
                         },
                         textStyle = TextStyle(fontSize = 16.sp),
                         modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
                             .weight(1f)
-                            .height(60.dp)
+                            .wrapContentHeight()
+                            .heightIn(min = 50.dp)
+                            .border(1.dp, LightButtonPurple, RoundedCornerShape(8.dp)),
+                        maxLines = Int.MAX_VALUE
+                    )
+                    Icon(
+                        imageVector = Icons.Default.Close,
+                        contentDescription = "Remove Icon",
+                        modifier = Modifier
+                            .padding(16.dp)
+                            .size(24.dp)
+                            .clickable {
+                                createCardViewModel.removeOption(index)
+                            }
                     )
                 }
             }
