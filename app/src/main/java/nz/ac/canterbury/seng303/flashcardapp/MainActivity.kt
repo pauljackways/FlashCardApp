@@ -55,24 +55,14 @@ class MainActivity : ComponentActivity() {
                 val navController = rememberNavController()
                 Scaffold(
                     topBar = {
-                        // Add your AppBar content here
                         TopAppBar(
                             title = { Text("Flash Cards App") },
                             navigationIcon = {
-                                if (navController.equals("Home")) {
-                                    IconButton(onClick = { finish()  }) {
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowBack,
-                                            contentDescription = "Back"
-                                        )
-                                    }
-                                } else {
-                                    IconButton(onClick = { navController.popBackStack()}) {
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowBack,
-                                            contentDescription = "Back"
-                                        )
-                                    }
+                                IconButton(onClick = { navController.popBackStack()}) {
+                                    Icon(
+                                        imageVector = Icons.Default.ArrowBack,
+                                        contentDescription = "Back"
+                                    )
                                 }
                             }
                         )
